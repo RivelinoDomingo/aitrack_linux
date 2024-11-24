@@ -1,0 +1,49 @@
+#include "OCVCamera.h"
+#include <stdexcept>
+#include <opencv2/opencv.hpp>
+
+bool OCVCamera::is_camera_available() {
+    try {
+        cap = std::make_unique<cv::VideoCapture>(cam_index, cv::CAP_ANY); // Use índice ou backend adequado
+        if (cap->isOpened()) {
+            cv::Mat frame;
+            cap->read(frame); // Testa se conseguimos capturar um frame
+            cam_native_width = static_cast<int>(cap->get(cv::CAP_PROP_FRAME_WIDTH));
+            cam_native_height = static_cast<int>(cap->get(cv::CAP_PROP_FRAME_HEIGHT));
+            cam_native_fps = std::max(30, static_cast<int>(cap->get(cv::CAP_PROP_FPS)));
+            return true;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Erro ao verificar disponibilidade da câmera: " << e.what() << std::endl;
+    }
+    return false;
+}
+
+void OCVCamera::get_frame(uint8_t* buffer) {
+    if (!cap || !cap->isOpened()) {
+        throw std::runtime_error("A câmera não está aberta!");
+    }
+
+    cv::Mat frame;
+    cap->read(frame); // Captura o frame
+    if (frame.empty()) {
+        throw std::runtime_error("Erro ao capturar frame da câmera!");
+    }
+
+    // Converta o frame para o formato esperado
+    cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+    std::memcpy(buffer, frame.data, frame.total() * frame.elemSize());
+}
+
+void OCVCamera::start_camera() {
+    cap = std::make_unique<cv::VideoCapture>(cam_index, cv::CAP_ANY);
+    if (!cap->isOpened()) {
+        throw std::runtime_error("Erro: Não foi possível abrir a câmera!");
+    }
+}
+
+void OCVCamera::stop_camera() {
+    if (cap && cap->isOpened()) {
+        cap->release(); // Libera o dispositivo da câmera
+    }
+}

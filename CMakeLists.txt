@@ -1,0 +1,91 @@
+SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
+cmake_minimum_required(VERSION 3.30.5)
+
+project(aitrack VERSION 1.0.0 LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+find_package(onnxruntime REQUIRED)
+find_package(OpenMP REQUIRED)
+find_package(OpenCV COMPONENTS opencv_core REQUIRED)
+find_package(OpenCV COMPONENTS opencv_imgproc REQUIRED)
+find_package(OpenCV COMPONENTS opencv_video REQUIRED)
+find_package(OpenCV COMPONENTS opencv_videoio REQUIRED)
+find_package(Qt5 COMPONENTS Core REQUIRED)
+find_package(Qt5 COMPONENTS UiTools REQUIRED)
+find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Quick REQUIRED)
+find_package(Qt5 COMPONENTS Gui REQUIRED)
+
+#find_package(Qt6 COMPONENTS Core REQUIRED)
+#find_package(Qt6 COMPONENTS UiTools REQUIRED)
+#find_package(Qt6 COMPONENTS Gui REQUIRED)
+#find_package(Qt6 COMPONENTS Quick REQUIRED)
+
+add_executable(aitrack
+               Client/src/presenter/presenter.cpp
+               Client/src/tracker/TrackerWrapper.cpp
+               Client/src/tracker/TrackerFactory.cpp
+               Client/src/camera/CameraSettings.cpp
+               Client/src/camera/NullCamera.cpp
+               Client/src/camera/Ps3Camera.cpp
+               Client/src/camera/CameraFactory.cpp
+               Client/src/camera/OCVCamera.cpp
+               Client/src/Main.cpp
+               Client/src/view/Resource.qrc
+               Client/src/view/HeadCalibrationWindow.ui
+               Client/src/view/HeadCalibrationWindow.cpp
+               Client/src/view/ConfigWindow.ui
+               Client/src/view/ConfigWindow.cpp
+               Client/src/view/MainWindow.ui
+               Client/src/view/WindowMain.cpp
+               Client/src/model/UDPSender.cpp
+               Client/src/model/Config.cpp
+               Client/src/model/UpdateChecker.cpp
+               Client/res/Resource.qrc
+               AITracker/src/data.cpp
+               AITracker/src/imageprocessor.cpp
+               AITracker/src/model.cpp
+               AITracker/src/filters.cpp
+               AITracker/src/PositionSolver.cpp
+               PS3Driver/src/ps3eye.h
+               PS3Driver/src/ps3eye_capi.h
+               PS3Driver/src/ps3eye.cpp
+               PS3Driver/src/ps3eye_capi.cpp
+)
+
+message(OpenCV_Libs="${OpenCV_Libs}")
+set(ONNXRUNTIME_DIR /opt/onnxruntime)
+#include_directories(${ONNXRUNTIME_DIR}/include)
+find_package(spdlog REQUIRED)
+# Adicione o caminho do Qt5 completo
+set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/cmake/Qt5/" CACHE STRING "CMake prefix path for Qt5")
+
+target_include_directories(aitrack PUBLIC AITracker/src PS3Driver/src ${OpenCV_INCLUDE_DIRS} ${ONNXRUNTIME_DIR}/include ${LIBUSB_INCLUDE_DIR} ${Qt5_INCLUDE_DIRS})
+
+# Vinculando as bibliotecas
+target_link_libraries(aitrack
+    /opt/onnxruntime/lib/libonnxruntime.so
+    spdlog::spdlog
+    opencv_core
+    opencv_imgproc
+    opencv_video
+    opencv_videoio
+    opencv_objdetect
+    OpenMP::OpenMP_CXX
+    Qt5::Core
+    Qt5::UiTools
+    Qt5::Widgets
+    Qt5::Quick
+    Qt5::Gui  # Garantir que Qt5::Gui esteja aqui
+    #Qt6::Gui
+    #Qt6::Core
+    #Qt6::UiTools
+    #Qt6::Quick
+    /lib/x86_64-linux-gnu/libusb-1.0.so)
